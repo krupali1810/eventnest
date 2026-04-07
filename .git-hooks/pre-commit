@@ -55,6 +55,11 @@ capture_if_exists ".cody" "cody"
 # Cline — stores conversation logs
 capture_if_exists ".cline" "cline"
 
+# Codex CLI — stores conversation/session logs
+capture_if_exists ".codex" "codex"
+capture_if_exists ".openai" "codex-sessions"
+capture_if_exists ".codex-history" "codex-history"
+
 # Windsurf/Cascade — stores AI logs
 capture_if_exists ".windsurf" "windsurf"
 
@@ -64,3 +69,4 @@ if [ -d "$AI_LOG_DIR" ] && [ "$(ls -A "$AI_LOG_DIR" 2>/dev/null)" ]; then
 fi
 
 exit 0
+ 
