@@ -12,14 +12,16 @@ RSpec.describe Api::V1::OrdersController, type: :request do
   end
 
   describe "GET /api/v1/orders" do
-    it "returns orders" do
-      create(:order, user: attendee, event: event)
+    it "returns only the current user's orders" do
+      owned_order = create(:order, user: attendee, event: event)
+      create(:order, event: event)
 
       get "/api/v1/orders", headers: auth_headers(attendee)
 
       expect(response).to have_http_status(:ok)
+
       data = JSON.parse(response.body)
-      expect(data.length).to be >= 1
+      expect(data.pluck("id")).to eq([owned_order.id])
     end
   end
 
@@ -28,8 +30,17 @@ RSpec.describe Api::V1::OrdersController, type: :request do
       order = create(:order, user: attendee, event: event)
 
       get "/api/v1/orders/#{order.id}", headers: auth_headers(attendee)
-
+ 
       expect(response).to have_http_status(:ok)
+    end
+
+    it "returns not found for another user's order" do
+      order = create(:order, event: event)
+
+      get "/api/v1/orders/#{order.id}", headers: auth_headers(attendee)
+   
+      expect(response).to have_http_status(:not_found)
+      expect(JSON.parse(response.body)).to eq("error" => "Order not found")
     end
   end
 
@@ -41,6 +52,16 @@ RSpec.describe Api::V1::OrdersController, type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(order.reload.status).to eq("cancelled")
+    end
+
+    it "returns not found for another user's order" do
+      order = create(:order, event: event, status: "pending")
+
+      post "/api/v1/orders/#{order.id}/cancel", headers: auth_headers(attendee)
+
+      expect(response).to have_http_status(:not_found)
+      expect(order.reload.status).to eq("pending")
+      expect(JSON.parse(response.body)).to eq("error" => "Order not found")
     end
   end
 end

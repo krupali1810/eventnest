@@ -2,6 +2,8 @@ module Api
   module V1
     class EventsController < ApplicationController
       skip_before_action :authenticate_user!, only: [:index, :show]
+      before_action :require_organizer!, only: [:create, :update, :destroy]
+      before_action :set_owned_event, only: [:update, :destroy]
 
       def index
         events = Event.published.upcoming
@@ -87,22 +89,29 @@ module Api
       end
 
       def update
-        event = Event.find(params[:id])
-
-        if event.update(event_params)
-          render json: event
+        if @event.update(event_params)
+          render json: @event
         else
-          render json: { errors: event.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
       def destroy
-        event = Event.find(params[:id])
-        event.destroy
+        @event.destroy
         head :no_content
       end
 
       private
+
+      def require_organizer!
+        return if current_user.organizer?
+
+        render json: { error: "Forbidden" }, status: :forbidden
+      end
+
+      def set_owned_event
+        @event = current_user.events.find(params[:id])
+      end
 
       def event_params
         params.require(:event).permit(:title, :description, :venue, :city,

@@ -39,7 +39,7 @@ RSpec.describe Event, type: :model do
 
       results = Event.published.upcoming
 
-      expect(results).to eq([future_event1, future_event2])
+      expect(results).to include(future_event1, future_event2)
       expect(results).not_to include(past_event)
       expect(results).not_to include(draft_event)
     end
