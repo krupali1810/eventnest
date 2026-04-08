@@ -10,7 +10,7 @@ module Api
           token = user.generate_jwt
           render json: { token: token, user: { id: user.id, name: user.name, email: user.email, role: user.role } }, status: :created
         else
-          render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: user.errors.full_messages }, status: :unprocessable_content
         end
       end
 

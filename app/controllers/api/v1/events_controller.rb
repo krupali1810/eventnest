@@ -84,7 +84,7 @@ module Api
         if event.save
           render json: event, status: :created
         else
-          render json: { errors: event.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: event.errors.full_messages }, status: :unprocessable_content
         end
       end
 
@@ -92,7 +92,7 @@ module Api
         if @event.update(event_params)
           render json: @event
         else
-          render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: @event.errors.full_messages }, status: :unprocessable_content
         end
       end
 

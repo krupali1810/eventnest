@@ -27,7 +27,7 @@ module Api
         if tier.save
           render json: tier, status: :created
         else
-          render json: { errors: tier.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: tier.errors.full_messages }, status: :unprocessable_content
         end
       end
 
@@ -37,7 +37,7 @@ module Api
         if tier.update(tier_params)
           render json: tier
         else
-          render json: { errors: tier.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: tier.errors.full_messages }, status: :unprocessable_content
         end
       end
 

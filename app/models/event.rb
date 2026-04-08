@@ -2,6 +2,8 @@ class Event < ApplicationRecord
   belongs_to :user
   has_many :ticket_tiers, dependent: :destroy
   has_many :orders
+  has_many :bookmarks, dependent: :destroy
+  has_many :bookmarked_by_users, through: :bookmarks, source: :user
 
   validates :title, presence: true
 

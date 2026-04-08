@@ -5,6 +5,7 @@ RSpec.describe Event, type: :model do
     it { should belong_to(:user) }
     it { should have_many(:ticket_tiers) }
     it { should have_many(:orders) }
+    it { should have_many(:bookmarks) }
   end
 
   describe "validations" do

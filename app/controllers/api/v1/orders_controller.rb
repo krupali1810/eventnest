@@ -73,7 +73,7 @@ module Api
             payment_status: order.payment.status
           }, status: :created
         else
-          render json: { errors: order.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: order.errors.full_messages }, status: :unprocessable_content
         end
       end
 
@@ -84,7 +84,7 @@ module Api
           order.cancel!
           render json: { message: "Order cancelled", status: order.status }
         else
-          render json: { error: "Cannot cancel order in #{order.status} status" }, status: :unprocessable_entity
+          render json: { error: "Cannot cancel order in #{order.status} status" }, status: :unprocessable_content
         end
       end
     end
