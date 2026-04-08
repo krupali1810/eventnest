@@ -261,9 +261,156 @@ docker-compose exec web bundle exec rspec
 ### Output
 
 ```text
-..........................2026-04-08T13:49:05.716Z pid=124 tid=2sc INFO: Sidekiq 7.3.9 connecting to Redis with options {:size=>10, :pool_name=>"internal", :url=>"redis://redis:6379/0"}
-..........
-
 Finished in 15.85 seconds (files took 1.62 seconds to load)
 36 examples, 0 failures
+```
+
+## Bookmark Feature Proof
+
+### Login as organizer
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"rahul@eventnest.dev","password":"password123"}'
+```
+
+### Response
+
+```json
+{"token":"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3NzU3NTEzNDB9.ILdPf8aunVVVoM7Au15ypL38YU2hAh8h8S23ifPjmtI","user":{"id":2,"name":"Rahul Sharma","email":"rahul@eventnest.dev","role":"organizer"}}
+```
+
+### Create an event for bookmark testing
+
+```bash
+curl -X POST http://localhost:3000/api/v1/events \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3NzU3NTEzNDB9.ILdPf8aunVVVoM7Au15ypL38YU2hAh8h8S23ifPjmtI" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": {
+      "title": "Bookmark Demo Event",
+      "description": "Event used to demonstrate bookmark flows",
+      "venue": "Demo Venue, Mumbai",
+      "starts_at": "2026-05-20T10:00:00Z",
+      "ends_at": "2026-05-20T13:00:00Z",
+      "category": "conference",
+      "status": "published"
+    }
+  }'
+```
+
+### Response
+
+```json
+{"id":249,"title":"Bookmark Demo Event","description":"Event used to demonstrate bookmark flows","venue":"Demo Venue, Mumbai","city":"Mumbai","starts_at":"2026-05-20T10:00:00.000Z","ends_at":"2026-05-20T13:00:00.000Z","status":"published","user_id":2,"category":"conference","max_capacity":null,"created_at":"2026-04-08T16:16:09.887Z","updated_at":"2026-04-08T16:16:09.887Z"}
+```
+
+### Login as attendee
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ananya@example.com","password":"password123"}'
+```
+
+### Response
+
+```json
+{"token":"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3NzU3NTE0MDd9.Wu_Pvom32xB3op0HURIsrhJCwJmFeBH8-vy_KHlxq8s","user":{"id":3,"name":"Ananya Gupta","email":"ananya@example.com","role":"attendee"}}
+```
+
+### Create a bookmark
+
+```bash
+curl -X POST http://localhost:3000/api/v1/events/249/bookmark \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3NzU3NTE0MDd9.Wu_Pvom32xB3op0HURIsrhJCwJmFeBH8-vy_KHlxq8s"
+```
+
+### Response
+
+```json
+{"id":23,"created_at":"2026-04-08T16:18:31.701Z","event":{"id":249,"title":"Bookmark Demo Event","starts_at":"2026-05-20T10:00:00.000Z","city":"Mumbai","status":"published"}}
+```
+
+### Duplicate bookmark is rejected
+
+```bash
+curl -X POST http://localhost:3000/api/v1/events/249/bookmark \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3NzU3NTE0MDd9.Wu_Pvom32xB3op0HURIsrhJCwJmFeBH8-vy_KHlxq8s"
+```
+
+### Response
+
+```json
+{"errors":["Event has already been taken"]}
+```
+
+### List my bookmarks
+
+```bash
+curl http://localhost:3000/api/v1/bookmarks \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3NzU3NTE0MDd9.Wu_Pvom32xB3op0HURIsrhJCwJmFeBH8-vy_KHlxq8s"
+```
+
+### Response
+
+```json
+[{"id":23,"created_at":"2026-04-08T16:18:31.701Z","event":{"id":249,"title":"Bookmark Demo Event","starts_at":"2026-05-20T10:00:00.000Z","city":"Mumbai","status":"published"}}]
+```
+
+### Remove the bookmark
+
+```bash
+curl -X DELETE http://localhost:3000/api/v1/events/249/bookmark \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3NzU3NTE0MDd9.Wu_Pvom32xB3op0HURIsrhJCwJmFeBH8-vy_KHlxq8s" -i
+```
+
+### Response
+
+```text
+HTTP/1.1 204 No Content
+```
+
+### Delete remains idempotent
+
+```bash
+curl -X DELETE http://localhost:3000/api/v1/events/249/bookmark \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3NzU3NTE0MDd9.Wu_Pvom32xB3op0HURIsrhJCwJmFeBH8-vy_KHlxq8s" -i
+```
+
+### Response
+
+```text
+HTTP/1.1 204 No Content
+```
+
+### Organizer cannot bookmark an event
+
+```bash
+curl -X POST http://localhost:3000/api/v1/events/249/bookmark \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3NzU3NTEzNDB9.ILdPf8aunVVVoM7Au15ypL38YU2hAh8h8S23ifPjmtI"
+```
+
+### Response
+
+```json
+{"error":"Forbidden"}
+```
+
+### Bookmark-focused test run
+
+```bash
+docker-compose exec web bundle exec rspec \
+  spec/controllers/bookmarks_controller_spec.rb \
+  spec/models/bookmark_spec.rb \
+  spec/models/user_spec.rb \
+  spec/models/event_spec.rb
+```
+
+### Output
+
+```text
+Finished in 7.35 seconds (files took 1.14 seconds to load)
+27 examples, 0 failures
 ```
